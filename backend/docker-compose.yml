@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: agri_postgres
+    environment:
+      POSTGRES_USER: agri_user
+      POSTGRES_PASSWORD: agri_pass
+      POSTGRES_DB: agri_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d
+    restart: unless-stopped
+volumes:
+  postgres_data:
