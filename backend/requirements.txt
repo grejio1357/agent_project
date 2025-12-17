@@ -1,0 +1,18 @@
+fastapi
+uvicorn
+
+# LLM
+langchain
+langchain-openai
+openai
+
+# DB
+psycopg2-binary
+sqlalchemy
+
+# Config
+pydantic
+pydantic-settings
+
+# Utils
+python-dotenv
