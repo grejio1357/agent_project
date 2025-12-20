@@ -9,6 +9,9 @@ openai
 # DB
 psycopg2-binary
 sqlalchemy
+faiss-cpu
+numpy
+sentence-transformers
 
 # Config
 pydantic
