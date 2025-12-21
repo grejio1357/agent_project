@@ -2,7 +2,11 @@ fastapi
 uvicorn
 
 # LLM
-langchain
+langchain==1.2.0
+langchain-core
+langchain-community
+langchain-huggingface
+sentence-transformers
 langchain-openai
 openai
 

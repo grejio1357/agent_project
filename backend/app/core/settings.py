@@ -10,6 +10,10 @@ class Settings(BaseSettings):
 
     # OpenAI
     openai_api_key: str
+    
+    # FAISS
+    FAISS_INDEX_PATH: str = "db/faiss/faiss.index"
+    FAISS_METADATA_PATH: str = "db/faiss/metadata.pkl"
 
     class Config:
         env_file = ".env"
