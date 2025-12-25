@@ -23,30 +23,25 @@ def query_api(req: QueryRequest):
     """
 
     try:
-        # 1️⃣ 초기 State 생성 (사용자 질문)
         state = GraphState(
             question=req.question
         )
 
-        # 2️⃣ LangGraph 실행 → state 채워짐
         final_state: GraphState = compiled_graph.invoke(state)
 
-        # 3️⃣ SynthesizerAgent로 최종 답변 생성
         answer = synthesizer.run(
-            question=final_state.question,
-            sql_result=final_state.sql_result,
-            rag_docs=final_state.rag_docs,
+            question=final_state['question'],
+            sql_result=final_state.get('sql_result', []),
+            rag_docs=final_state.get('rag_docs', []),
         )
 
-        # 4️⃣ Frontend로 응답 반환
         return QueryResponse(
             answer=answer,
-            sql_result=final_state.sql_result,
-            rag_docs=final_state.rag_docs,
+            sql_result=final_state.get("sql_result", []),
+            rag_docs=final_state.get('rag_docs', []),
         )
 
     except Exception as e:
-        # 예상 못 한 오류에 대한 안전망
         raise HTTPException(
             status_code=500,
             detail=f"Query processing failed: {str(e)}"

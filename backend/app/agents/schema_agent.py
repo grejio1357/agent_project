@@ -5,13 +5,9 @@ class SchemaAgent:
     def __init__(self):
         self.pg = PostgresService()
 
-    def run(self):
-        rows = self.pg.fetch_schema()
-
-        schema = {}
-        for table, column, dtype in rows:
-            if table not in schema:
-                schema[table] = {"columns": {}}
-            schema[table]["columns"][column] = dtype
-
-        return schema
+    def run(self) -> dict:
+        """
+        DB 스키마를 한글 컬럼명으로 LLM에 제공
+        {테이블명: {"columns": {한글컬럼: 타입}}}
+        """
+        return self.pg.fetch_schema()

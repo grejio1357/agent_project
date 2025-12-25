@@ -1,20 +1,18 @@
 # app/agents/synthesizer_agent.py
 from typing import List, Any, Optional
-from app.core.llm import llm
+from app.core.llm import LLMService
 
 
 class SynthesizerAgent:
+    def __init__(self, llm_service: LLMService | None = None):
+        self.llm = llm_service or LLMService()
+
     def run(
         self,
         question: str,
         sql_result: Optional[List[Any]] = None,
         rag_docs: Optional[List[str]] = None,
     ) -> str:
-        """
-        Generate final natural language answer
-        using SQL results and/or RAG documents.
-        """
-
         context_parts = []
 
         # 1️⃣ SQL 결과 (사실)
@@ -56,5 +54,5 @@ Context:
 Answer in Korean, clearly and concisely.
 """
 
-        response = llm.invoke(prompt)
-        return response.content.strip()
+        return self.llm.invoke(prompt)
+
