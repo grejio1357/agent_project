@@ -16,6 +16,11 @@ sqlalchemy
 faiss-cpu
 numpy
 sentence-transformers
+transformers
+torch
+
+# opensearch
+opensearch-py>=2.4.0
 
 # Config
 pydantic

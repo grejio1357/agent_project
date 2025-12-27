@@ -1,26 +1,47 @@
 from typing import List
 from app.services.faiss_service import FaissService
+from app.services.opensearch_service import OpenSearchService
 from app.core.llm import LLMService
 from app.prompts.rag_prompt import SYSTEM_PROMPT, RERANK_INSTRUCTION
+
 
 class RAGAgent:
     def __init__(self):
         self.faiss = FaissService()
+        self.opensearch = OpenSearchService()
         self.llm = LLMService()
 
-    def run(self, question: str, recall_k: int = 12, rerank_n: int = 3) -> List[str]:
+    def run(
+        self,
+        question: str,
+        keyword_k: int = 20,
+        recall_k: int = 12,
+        rerank_n: int = 3
+    ) -> List[str]:
         """
         RAG pipeline:
-        1. Vector recall (FAISS)
-        2. LLM-based reranking
+        1. OpenSearch keyword recall
+        2. FAISS vector recall (filtered)
+        3. LLM-based reranking
         """
-        # 1️⃣ Recall
-        docs = self.faiss.search(question, top_k=recall_k)
-        if not docs:
+
+        # OpenSearch: 키워드 기반 1차 필터
+        keyword_docs = self.opensearch.search(question, top_k=keyword_k)
+        if not keyword_docs:
             return []
 
-        # 2️⃣ Rerank
-        reranked_docs = self._rerank(question, docs, top_n=rerank_n)
+        # FAISS: 벡터 검색 (keyword_docs 기반)
+        vector_docs = self.faiss.search(
+            query=question,
+            top_k=recall_k,
+            candidates=keyword_docs   
+        )
+
+        if not vector_docs:
+            return []
+
+        # Rerank
+        reranked_docs = self._rerank(question, vector_docs, top_n=rerank_n)
         return reranked_docs
 
     def _rerank(self, question: str, docs: List[str], top_n: int) -> List[str]:
@@ -36,9 +57,6 @@ class RAGAgent:
         return [docs[i] for i in selected[:top_n]]
 
     def _build_rerank_prompt(self, question: str, docs: List[str], top_n: int) -> str:
-        """
-        Build LLM prompt for reranking with dynamic top_n.
-        """
         doc_block = "\n\n".join([f"[{i}] {doc}" for i, doc in enumerate(docs)])
         return f"""
 {SYSTEM_PROMPT}
@@ -56,9 +74,6 @@ class RAGAgent:
 """
 
     def _parse_indices(self, response: str, max_len: int) -> List[int]:
-        """
-        Parse LLM output safely.
-        """
         indices = []
         for token in response.replace(" ", "").split(","):
             if token.isdigit():
@@ -66,5 +81,3 @@ class RAGAgent:
                 if 0 <= idx < max_len:
                     indices.append(idx)
         return indices
-
-

@@ -1,47 +1,49 @@
-import pickle
 import faiss
-from langchain_huggingface import HuggingFaceEmbeddings
-from app.core.settings import settings
-from typing import List
 import numpy as np
-from app.core.config import RAG_TOP_K
+from typing import List
+from langchain_huggingface import HuggingFaceEmbeddings
 
 
 class FaissService:
     def __init__(self):
-        try:
-            self.index = faiss.read_index(settings.FAISS_INDEX_PATH)
-        except Exception as e:
-            raise FileNotFoundError(f"FAISS index 파일을 찾을 수 없습니다: {settings.FAISS_INDEX_PATH}") from e
-
-        try:
-            with open(settings.FAISS_METADATA_PATH, "rb") as f:
-                self.documents = pickle.load(f)
-        except Exception as e:
-            raise FileNotFoundError(f"FAISS metadata 파일을 찾을 수 없습니다: {settings.FAISS_METADATA_PATH}") from e
-
         self.embeddings = HuggingFaceEmbeddings(
             model_name="jhgan/ko-sroberta-multitask"
         )
 
-    def search(self, query: str, top_k: int = 5) -> List[str]:
+    def search(
+        self,
+        query: str,
+        candidates: List[str],
+        top_k: int = 5
+    ) -> List[str]:
         """
-        Search FAISS index.
-        If top_k is None, use default from config.
+        FAISS search on candidate documents only
         """
-        k = top_k or RAG_TOP_K
 
+        if not candidates:
+            return []
+
+        # 후보 문서 임베딩
+        doc_vectors = self.embeddings.embed_documents(candidates)
+        doc_vectors = np.array(doc_vectors, dtype="float32")
+
+        dim = doc_vectors.shape[1]
+
+        # 임시 FAISS index 생성 (in-memory)
+        index = faiss.IndexFlatL2(dim)
+        index.add(doc_vectors)
+
+        # 쿼리 임베딩
         query_vector = self.embeddings.embed_query(query)
-        query_vector = np.array(query_vector, dtype='float32')
-        
-        distances, indices = self.index.search(
-            np.array([query_vector]), k
-        )
+        query_vector = np.array([query_vector], dtype="float32")
 
+        # 검색
+        distances, indices = index.search(query_vector, top_k)
+
+        # 결과 매핑
         results = []
         for idx in indices[0]:
             if idx != -1:
-                results.append(self.documents[idx].page_content)
+                results.append(candidates[idx])
+
         return results
-
-

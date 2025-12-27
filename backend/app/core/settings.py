@@ -15,6 +15,12 @@ class Settings(BaseSettings):
     FAISS_INDEX_PATH: str = "db/faiss/faiss.index"
     FAISS_METADATA_PATH: str = "db/faiss/metadata.pkl"
 
+    # OpenSearch 
+    OPENSEARCH_HOST: str = "localhost"
+    OPENSEARCH_PORT: int = 9200
+    OPENSEARCH_INDEX: str = "rag_documents"
+    OPENSEARCH_USE_SSL: bool = False
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

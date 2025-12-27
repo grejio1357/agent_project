@@ -10,6 +10,19 @@ from app.agents.rag_agent import RAGAgent
 from app.services.postgres_service import PostgresService
 from app.utils.question_classifier import classify_question
 
+DEBUG = True
+
+def debug(title: str, value):
+    if not DEBUG:
+        return
+    print("\n" + "=" * 80)
+    print(f"[DEBUG] {title}")
+    print("-" * 80)
+    if value is None:
+        print("None")
+    else:
+        print(value)
+    print("=" * 80)
 
 # ===== Agent / Service instances =====
 schema_agent = SchemaAgent()
@@ -24,11 +37,13 @@ postgres = PostgresService()
 
 def classify_intent(state: GraphState) -> GraphState:
     state.intent = classify_question(state.question)
+    debug("INTENT", state.intent)
     return state
 
 
 def load_schema(state: GraphState) -> GraphState:
     state.db_schema = schema_agent.run()
+    debug("DB SCHEMA (tables)", list(state.db_schema.keys()))
     return state
 
 
@@ -37,13 +52,21 @@ def generate_sql(state: GraphState) -> GraphState:
         question=state.question,
         schema=state.db_schema
     )
+    debug("GENERATED SQL (LLM)", state.generated_sql)
     return state
 
 
 def normalize_and_validate(state: GraphState) -> GraphState:
+
+    debug("SQL BEFORE NORMALIZE", state.generated_sql)
+
     state.normalized_sql = normalizer.normalize(state.generated_sql)
 
+    debug("SQL AFTER NORMALIZE", state.normalized_sql)
+
     result = validator.validate(state.normalized_sql)
+
+    debug("VALIDATION RESULT", result)
     if not result.is_valid:
         state.retry_count += 1
         state.last_error = result.reason
@@ -54,12 +77,19 @@ def normalize_and_validate(state: GraphState) -> GraphState:
 
 
 def execute_sql(state: GraphState) -> GraphState:
+    debug("FINAL SQL TO EXECUTE", state.normalized_sql)
     state.sql_result = postgres.run(state.normalized_sql)
+
+    debug("SQL RESULT ROW COUNT", len(state.sql_result) if state.sql_result else 0)
+    debug("SQL RESULT SAMPLE", state.sql_result[:5] if state.sql_result else [])
+    
     return state
 
 
 def run_rag(state: GraphState) -> GraphState:
     state.rag_docs = rag_agent.run(state.question)
+    debug("RAG DOCS COUNT", len(state.rag_docs))
+    debug("RAG DOCS SAMPLE", state.rag_docs)
     return state
 
 

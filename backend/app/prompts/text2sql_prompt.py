@@ -22,7 +22,19 @@ Rules:
    - production_ton (numeric)
 3. Use WHERE conditions explicitly.
 4. If aggregation is needed, use SUM or AVG.
-5. Use proper PostgreSQL syntax.
+5. If the question compares specific regions (e.g. "A, B 중에", "A와 B 중"),
+   you MUST restrict the SQL using a WHERE clause such as:
+
+   WHERE region IN ('A', 'B')
+
+   Do NOT return results from other regions.
+6. Use proper PostgreSQL syntax.
+7. If the question asks to compare multiple regions
+   (e.g. "A와 B 중에", "A, B 중 어느 곳이 더"),
+   DO NOT use LIMIT.
+
+   Return all compared regions so the comparison
+   can be done after querying.
 """
 
 EXAMPLES = """
