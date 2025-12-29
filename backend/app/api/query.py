@@ -14,14 +14,6 @@ synthesizer = SynthesizerAgent()
 
 @router.post("/query", response_model=QueryResponse)
 def query_api(req: QueryRequest):
-    """
-    Entry point for user questions.
-    1. Create initial GraphState
-    2. Run LangGraph workflow
-    3. Synthesize final answer
-    4. Return response to frontend
-    """
-
     try:
         state = GraphState(
             question=req.question
@@ -30,19 +22,22 @@ def query_api(req: QueryRequest):
         final_state: GraphState = compiled_graph.invoke(state)
 
         answer = synthesizer.run(
-            question=final_state['question'],
-            sql_result=final_state.get('sql_result', []),
-            rag_docs=final_state.get('rag_docs', []),
+            question=final_state['question'],              
+            sql_result=final_state['sql_result'] or [],    
+            rag_docs=final_state['rag_docs'] or [],        
         )
 
         return QueryResponse(
             answer=answer,
-            sql_result=final_state.get("sql_result", []),
-            rag_docs=final_state.get('rag_docs', []),
+            sql_result=final_state['sql_result'] or [],
+            rag_docs=final_state['rag_docs'] or [],
         )
 
     except Exception as e:
+        import traceback
+        traceback.print_exc()   #(디버그용)
         raise HTTPException(
             status_code=500,
             detail=f"Query processing failed: {str(e)}"
         )
+
