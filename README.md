@@ -29,22 +29,25 @@ unstructured knowledge retrieval through RAG.
 
 ## System Architecture
 (architecture diagram image)
-("agent_project/docs/system_architecture.drawio")
+("agent_project/docs/system_architecture.drawio.png")
 
 ## Retrieval Strategy
 
 The system separates retrieval paths for unstructured and structured data.
 
-For unstructured knowledge retrieval, the RAG agent uses a two-stage
-pipeline where OpenSearch performs initial keyword-based filtering
-and FAISS applies semantic similarity search on the reduced candidate set.
-This sequential approach improves retrieval precision while limiting
-vector search overhead.
+- For unstructured knowledge retrieval, the RAG agent uses a three-stage pipeline:
 
-For structured queries, the SQL agent generates SQL statements via
-a text-to-SQL process using an LLM. The generated queries are then
-executed by a PostgreSQL service running in a Docker container to
-retrieve the actual data.
+1. OpenSearch: performs initial keyword-based filtering to quickly narrow down the candidate set.
+2. FAISS: applies semantic similarity search on the reduced set for more precise retrieval.
+3. LLM-based reranker: selects the most relevant documents from the FAISS results to feed into the final LLM-generated answer.
+
+- For structured data retrieval, the SQL agent follows a clear pipeline:
+
+1. Intent classification: determines if the query requires structured retrieval.
+2. LLM-based text-to-SQL: generates the corresponding SQL statement from the user query.
+3. PostgreSQL execution: runs the generated SQL inside a Dockerized database to fetch the actual numerical or categorical data.
+
+This approach ensures that structured queries are accurately translated into SQL and reliably return the correct data for the final answer.
 
 ## Development Process
 
