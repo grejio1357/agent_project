@@ -123,7 +123,7 @@ with a clean Docker setup.
 - 1. Start required services
   Run the PostgreSQL and OpenSearch containers:
 
-`bash
+ bash
  docker-compose up -d postgres opensearch
 
 - 2. Run the backend server
